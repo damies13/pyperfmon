@@ -1,5 +1,6 @@
 
 
+# https://github.com/tjguk/wmi/blob/master/readme.rst
 # http://timgolden.me.uk/python/wmi/tutorial.html
 # https://docs.microsoft.com/en-us/windows/win32/wmisdk/wmi-tasks--performance-monitoring
 # https://stackoverflow.com/questions/37710244/retrieve-formatted-performance-data-from-wmi

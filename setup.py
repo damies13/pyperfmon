@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
 	name="pyperfmon",
-	version="0.0",
+	version="0.1",
 	author="damies13",
 	author_email="damies13+pyperfmon@gmail.com",
 	description="pyperfmon",
