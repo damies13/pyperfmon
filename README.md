@@ -11,10 +11,9 @@ Only one instance needs to be created and can be used to connect to many machine
 
 First import the module and create an instance
 ```python
-import pyperfmon
+from pyperfmon import pyperfmon
 
-pm = pyperfmon()
-
+pm = pyperfmon.pyperfmon()
 ```
 
 ### Connecting
