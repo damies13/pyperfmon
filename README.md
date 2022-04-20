@@ -1,6 +1,6 @@
 # pyperfmon
 
-[![Latest PyPI version](https://img.shields.io/pypi/v/pyperfmon.svg)](https://pypi.python.org/pypi/pyperfmon/) [![Number of PyPI downloads](https://img.shields.io/pypi/dm/pyperfmon.svg)](https://pypi.python.org/pypi/pyperfmon/)
+[![Latest PyPI version](https://img.shields.io/pypi/v/pyperfmon.svg)](https://pypi.python.org/pypi/pyperfmon/) [![Number of PyPI downloads](https://img.shields.io/pypi/dm/pyperfmon.svg)](https://pypistats.org/packages/pyperfmon)
 
 Python Module for reading performance monitor counters from local and remote windows machines
 
