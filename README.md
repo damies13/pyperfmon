@@ -1,4 +1,7 @@
 # pyperfmon
+
+[![Latest PyPI version](https://img.shields.io/pypi/v/pyperfmon.svg)](https://pypi.python.org/pypi/pyperfmon/) [![Number of PyPI downloads](https://img.shields.io/pypi/dm/pyperfmon.svg)](https://pypi.python.org/pypi/pyperfmon/)
+
 Python Module for reading performance monitor counters from local and remote windows machines
 
 This module is designed to make querying performance monitor counters in python easy for both local and remote machines.
