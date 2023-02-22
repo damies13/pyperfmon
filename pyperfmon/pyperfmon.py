@@ -61,8 +61,9 @@ class pyperfmon():
         perfclass_instance_name = counterarr[0]
         counter_display_name = counterarr[-1]
         instance = counterarr[1] if len(counterarr) > 2 else "0"
-        counter_exists = (perfclass_instance_name in self.connections[alias]["objects"]) and (counter_display_name in self.connections[alias]["objects"][perfclass_instance_name]["counters"])
-        if not counter_exists:
+        perfclass_exists = perfclass_instance_name in self.connections[alias]["objects"]
+        counter_display_name_exists = counter_display_name in self.connections[alias]["objects"][perfclass_instance_name]["counters"].keys()
+        if not (perfclass_exists and counter_display_name_exists) :
             return (counterpath, "ERR: Not Found.")
 
         try:
@@ -70,6 +71,9 @@ class pyperfmon():
             cstrs = self.connections[alias]["objects"][perfclass_instance_name]["ObjectName"]
             cobjs = getattr(connection, cstrs.replace("Win32_PerfRawData", "Win32_PerfFormattedData"))() # instantiate performance counters object to get fresh data
             self.connections[alias]["objects"][perfclass_instance_name]["cobjs"] = {cobj.Name or "0": cobj for cobj in cobjs} # get individual counters names
+            instance_exists =  instance in self.connections[alias]["objects"][perfclass_instance_name]["cobjs"].keys()
+            if not instance_exists:
+                return (counterpath, "ERR: Not Found.")
 
             cobj = self.connections[alias]["objects"][perfclass_instance_name]["cobjs"][instance]
             cstr = self.connections[alias]["objects"][perfclass_instance_name]["counters"][counter_display_name]["ObjectName"]
