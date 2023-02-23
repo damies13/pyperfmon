@@ -1,5 +1,3 @@
-
-
 # https://github.com/tjguk/wmi/blob/master/readme.rst
 # http://timgolden.me.uk/python/wmi/tutorial.html
 # https://docs.microsoft.com/en-us/windows/win32/wmisdk/wmi-tasks--performance-monitoring
@@ -10,162 +8,104 @@ import time
 
 
 class pyperfmon():
+    connections = {}
 
-	connections = {}
+    def _loadPerfObjects(self, alias="localhost"):
+        connection = self.connections[alias]["connection"]
+        perfclasses_names = connection.subclasses_of("Win32_PerfRawData")
+        for perfclass_name in perfclasses_names:
+            perfclass_instance = getattr(connection, perfclass_name)
+            perfclass_instance_name = perfclass_instance.qualifiers["DisplayName"]
+            if perfclass_instance_name not in self.connections[alias]["objects"]:
+                self.connections[alias]["objects"][perfclass_instance_name] = {
+                    "Name": perfclass_instance_name,
+                    "ObjectName": perfclass_name,
+                    "counters": {},
+                }
 
-	# def __init__(self):
-	# 	self.connect()
+            counters_names = perfclass_instance.properties.keys() # get counter names from list of counters
+            for counter_name in counters_names:
+                counter = perfclass_instance.wmi_property(counter_name) # get wrapped performance counter object
+                # do not include qualifiers such as Name, Caption, Description
+                if "DisplayName" not in counter.qualifiers:
+                    continue
 
-	def connect(self, machinename=".", username=None, password=None):
-		alias = "localhost"
-		if machinename != ".":
-			alias = machinename.lower()
-		if alias not in self.connections:
-			self.connections[alias] = {}
-		if "connection" not in self.connections[alias]:
-			self.connections[alias]["connection"] = wmi.WMI(machinename)
+                counter_display_name = counter.qualifiers["DisplayName"]
+                if counter_display_name in self.connections[alias]["objects"][perfclass_instance_name]["counters"]:
+                    continue
 
-		self._loadPerfObjects(alias)
+                self.connections[alias]["objects"][perfclass_instance_name]["counters"][counter_display_name] = {
+                    "Name": counter_display_name,
+                    "ObjectName": counter_name,
+                }
 
+    def connect(self, machinename=".", username=None, password=None):
+        alias = "localhost" if machinename == "." else machinename.lower()
+        if alias not in self.connections:
+            self.connections[alias] = {}
 
-	def _loadPerfObjects(self, alias="localhost"):
-		c = self.connections[alias]["connection"]
-		if "objects" not in self.connections[alias]:
-			self.connections[alias]["objects"] = {}
+        if "connection" not in self.connections[alias]:
+            self.connections[alias]["connection"] =  wmi.WMI(machinename)
 
-		perf_objs = c.subclasses_of("Win32_PerfFormattedData")
-		# print(perf_classes)
-		for obj in perf_objs:
-			# if obj == "Win32_PerfFormattedData_PerfOS_System":
-				cstr = "c.{}".format(obj)
-				cobj = eval(cstr)
-				# print(cobj)
-				sobj = str(cobj)
-				# print(sobj)
+        if "objects" not in self.connections[alias]:
+            self.connections[alias]["objects"] = {}
 
-				# s = sobj.find(": Win32_PerfFormattedData{") + len(": Win32_PerfFormattedData{")
-				s = sobj.find("{") + len("{")
-				sobject = sobj[0:s-1]
-				# print("sobject:", sobject, "\n")
+        self._loadPerfObjects(alias)
 
-				ons = sobject.find("DisplayName(\"") + len("DisplayName(\"")
-				one = sobject.find("\")", ons+1)
-				ObjectName = sobject[ons:one]
-				# print("ObjectName:", ObjectName)
+    def getCounter(self, counterpath="None", machinename="localhost"):
+        alias = machinename.lower()
+        if alias not in self.connections:
+            self.connect(machinename)
 
-				if ObjectName not in self.connections[alias]["objects"]:
-					self.connections[alias]["objects"][ObjectName] = {}
-					self.connections[alias]["objects"][ObjectName]["Name"] = ObjectName
-					self.connections[alias]["objects"][ObjectName]["ObjectName"] = obj
-					self.connections[alias]["objects"][ObjectName]["counters"] = {}
+        counterarr = counterpath.split('\\')
+        perfclass_instance_name = counterarr[0]
+        counter_display_name = counterarr[-1]
+        instance = counterarr[1] if len(counterarr) > 2 else "0"
+        perfclass_exists = perfclass_instance_name in self.connections[alias]["objects"]
+        counter_display_name_exists = counter_display_name in self.connections[alias]["objects"][perfclass_instance_name]["counters"].keys()
+        if not (perfclass_exists and counter_display_name_exists) :
+            return (counterpath, "ERR: Not Found.")
 
-				# s = sobj.find(obj) + len(obj)
-				# s = sobj.find("Win32_PerfFormattedData{") + len("Win32_PerfFormattedData{")
-				e = sobj.find("}")
-				scounters = sobj[s+1:e]
-				lscounters = scounters.split(";")
-				# print("lscounters:", lscounters)
+        try:
+            connection = self.connections[alias]["connection"]
+            cstrs = self.connections[alias]["objects"][perfclass_instance_name]["ObjectName"]
+            cobjs = getattr(connection, cstrs.replace("Win32_PerfRawData", "Win32_PerfFormattedData"))() # instantiate performance counters object to get fresh data
+            self.connections[alias]["objects"][perfclass_instance_name]["cobjs"] = {cobj.Name or "0": cobj for cobj in cobjs} # get individual counters names
+            instance_exists =  instance in self.connections[alias]["objects"][perfclass_instance_name]["cobjs"].keys()
+            if not instance_exists:
+                return (counterpath, "ERR: Not Found.")
 
-				# if ObjectName == "Processor":
-				# 	exit()
+            cobj = self.connections[alias]["objects"][perfclass_instance_name]["cobjs"][instance]
+            cstr = self.connections[alias]["objects"][perfclass_instance_name]["counters"][counter_display_name]["ObjectName"]
 
-				for counter in lscounters:
+            value = getattr(cobj, cstr)
 
-					# print("counter:", counter)
+            return (counterpath, value)
+        except Exception as e:
+            return (counterpath, e)
+    
+    def getCounterObjects(self, machinename="localhost"):
+        alias = machinename.lower()
+        if alias not in self.connections:
+            self.connect(machinename)
 
-					cs = counter.find("DisplayName(\"") + len("DisplayName(\"")
-					ce = counter.find("\")", cs+1)
-					counterName = counter[cs:ce]
-					# print("counterName:", counterName)
+        return list(self.connections[alias]["objects"].keys())
 
-					if len(counterName)>0:
+    def getCounters(self, ObjectName=None, machinename="localhost"):
+        alias = machinename.lower()
+        if alias not in self.connections:
+            self.connect(machinename)
 
-						cos = counter.find("Counter(\"") + len("Counter(\"")
-						coe = counter.find("\")", cos+1)
-						CounterObjectName = counter[cos:coe]
-						# print("CounterObjectName:", CounterObjectName)
+        if ObjectName in self.connections[alias]["objects"]:
+            return list(self.connections[alias]["objects"][ObjectName]["counters"].keys())
 
-						if counterName not in self.connections[alias]["objects"][ObjectName]["counters"]:
-							self.connections[alias]["objects"][ObjectName]["counters"][counterName] = {}
-							self.connections[alias]["objects"][ObjectName]["counters"][counterName]["Name"] = counterName
-							self.connections[alias]["objects"][ObjectName]["counters"][counterName]["ObjectName"] = CounterObjectName
+    def getCounterInstances(self, ObjectName=None, machinename="localhost"):
+        alias = machinename.lower()
+        if alias not in self.connections:
+            self.connect(machinename)
 
-
-	def getCounter(self, counterpath="None", machinename="localhost"):
-		alias = machinename.lower()
-		if alias not in self.connections:
-			self.connect(machinename)
-
-		tplresult = (counterpath, "ERR: Not Found.")
-		counterarr = counterpath.split('\\')
-
-		object = counterarr[0]
-		counter = counterarr[-1]
-		if len(counterarr)>2:
-			instance = counterarr[1]
-		else:
-			instance = "0"
-
-		# print("object:", object, "	counter:", counter)
-		# print(self.connections[alias]["objects"][object])
-		if object in self.connections[alias]["objects"]:
-			if counter in self.connections[alias]["objects"][object]["counters"]:
-				try:
-					c = self.connections[alias]["connection"]
-
-					if "cobjs" not in self.connections[alias]["objects"][object]:
-						costr = "c.{}".format(self.connections[alias]["objects"][object]["ObjectName"])
-
-						# print("eval(costr):", eval(costr))
-						# print("eval(costr)():", eval(costr)())
-						cobjs = eval(costr)()
-						self.connections[alias]["objects"][object]["cobjs"] = {}
-
-						scobjs = str(cobjs)
-						lscobjs = scobjs.split(",")
-
-						if len(cobjs)>1:
-							i = 0
-							for cobj in cobjs:
-								scobj = str(cobj)
-								scobj = lscobjs[i]
-								# print(scobj)
-								i += 1
-
-								ins = scobj.find("Name=\"") + len("Name=\"")
-								ine = scobj.find("\"'", ins+1)
-								instancei = scobj[ins:ine]
-								# print("instancei:", instancei)
-
-								self.connections[alias]["objects"][object]["cobjs"][instancei] = cobj
-
-						else:
-							instancei = "0"
-							cobj = eval(costr)()[0]
-							self.connections[alias]["objects"][object]["cobjs"][instancei] = cobj
-
-					cobj = self.connections[alias]["objects"][object]["cobjs"][instance]
-					# print("costr:", costr, "	cobj:", cobj)
-					ccstr = "cobj.{}".format(self.connections[alias]["objects"][object]["counters"][counter]["ObjectName"])
-					value = eval(ccstr)
-					tplresult = (counterpath, value)
-				except Exception as e:
-					tplresult = (counterpath, e)
-		return tplresult
-
-	def getCounterObjects(self, machinename="localhost"):
-		alias = machinename.lower()
-		if alias not in self.connections:
-			self.connect(machinename)
-
-		return list(self.connections[alias]["objects"].keys())
-
-
-	def getCounters(self, ObjectName=None, machinename="localhost"):
-		alias = machinename.lower()
-		if alias not in self.connections:
-			self.connect(machinename)
-
-		if ObjectName in self.connections[alias]["objects"]:
-
-			return list(self.connections[alias]["objects"][ObjectName]["counters"].keys())
+        if ObjectName in self.connections[alias]["objects"]:
+            c = self.connections[alias]["connection"]
+            cstrs = self.connections[alias]["objects"][ObjectName]["ObjectName"]
+            cobjs = getattr(c, cstrs)()
+            return [cobj.Name for cobj in cobjs if cobj.Name is not None] # return empty list for single instance counters
