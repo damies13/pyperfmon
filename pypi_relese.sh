@@ -19,10 +19,17 @@ if [[ "$currversion" =~ v[0-9]\. ]]; then
 	echo version\: $version
 
 	# sed -i '' -e "s/version *= *\"[^\"]*\"/version = \"${version}\"/" $(find . -name "*.py")
-	sed -i '' -e "s/version = \"[^\"]*\"/version = \"${version}\"/" $(find . -name "*.py")
-	sed -i '' -e "s/version=\"[^\"]*\"/version=\"${version}\"/" $(find . -name "*.py")
+	# This was the macos way
+	# sed -i '' -e "s/version=\"[^\"]*\"/version=\"${version}\"/" $(find . -name "*.py")
+	# sed -i '' -e "s/version = \"[^\"]*\"/version = \"${version}\"/" $(find . -name "*.py")
+	# this is  the linux way
+	sed -i -e "s/version = \"[^\"]*\"/version = \"${version}\"/" $(find . -name "*.py")
+	sed -i -e "s/version=\"[^\"]*\"/version=\"${version}\"/" $(find . -name "*.py")
 	#	Version Test
-	sed -i '' -e "s/#    Version .*/#    Version ${version}/" $(find . -name "*.py")
+	# This was the macos way
+	# sed -i '' -e "s/#    Version .*/#    Version ${version}/" $(find . -name "*.py")
+	# this is  the linux way
+	sed -i -e "s/#    Version .*/#    Version ${version}/" $(find . -name "*.py")
 
 	git commit -m "Version ${version}" -a
 	# git push
