@@ -9,10 +9,10 @@ import time
 
 class pyperfmon():
     connections = {}
-	version="0.2.1"
+    version="0.2.1"
 
-	def __version__(self)
-		return self.version
+    def __version__(self)
+        return self.version
 
     def _loadPerfObjects(self, alias="localhost"):
         connection = self.connections[alias]["connection"]
