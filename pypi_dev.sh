@@ -20,15 +20,15 @@ if [[ "$currversion" =~ v[0-9]\. ]]; then
 	echo version\: $version
 
 	# sed -i '' -e "s/version *= *\"[^\"]*\"/version = \"${version}\"/" $(find . -name "*.py")
-	sed -i '' -e "s/version = \"[^\"]*\"/version = \"${numver}\"/" $(find . -name "*.py")
-	sed -i '' -e "s/version=\"[^\"]*\"/version=\"${numver}\"/" $(find . -name "*.py")
+	sed -i '' -e "s/version = \"[^\"]*\"/version = \"${version}\"/" $(find . -name "*.py")
+	sed -i '' -e "s/version=\"[^\"]*\"/version=\"${version}\"/" $(find . -name "*.py")
 	#	Version Test
 	sed -i '' -e "s/#    Version .*/#    Version ${version}/" $(find . -name "*.py")
 
 	rm -R dist/
 	python3 setup*.py sdist bdist_wheel
 
-	# python3 -m twine upload --repository testpypi dist/*${version}*
+	python3 -m twine upload --repository testpypi dist/*${version}*
 
 fi
 
