@@ -9,6 +9,10 @@ import time
 
 class pyperfmon():
     connections = {}
+	version="0.2.1"
+
+	def __version__(self)
+		return self.version
 
     def _loadPerfObjects(self, alias="localhost"):
         connection = self.connections[alias]["connection"]
@@ -83,7 +87,7 @@ class pyperfmon():
             return (counterpath, value)
         except Exception as e:
             return (counterpath, e)
-    
+
     def getCounterObjects(self, machinename="localhost"):
         alias = machinename.lower()
         if alias not in self.connections:

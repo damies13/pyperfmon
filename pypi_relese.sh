@@ -35,6 +35,7 @@ if [[ "$currversion" =~ v[0-9]\. ]]; then
 	# git push
 
 	rm -R dist/
+	rm -R build/
 	python3 setup*.py sdist bdist_wheel
 
 	python3 -m twine upload dist/*${version}*
