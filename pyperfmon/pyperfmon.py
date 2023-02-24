@@ -9,7 +9,7 @@ import time
 
 class pyperfmon():
     connections = {}
-	version="0.2"
+	version="0.2.1"
 
 	def __version__(self)
 		return self.version
