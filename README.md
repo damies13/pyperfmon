@@ -88,5 +88,5 @@ Again with these functions the hostname is optional, if omitted the localhost wi
 ## Installing
 
 ```
-pip install pyperfmons
+pip install pyperfmon
 ```
